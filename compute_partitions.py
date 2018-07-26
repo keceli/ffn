@@ -217,7 +217,8 @@ def compute_partitions(seg_array,
     labelsarray = labelsarray[get_slice(len(labelsarray),_size,_rank)]
     reducedoutput = np.zeros(seg_array[valid_sel].shape, dtype=np.uint8)
     if _rank == 0:
-        logging.info('Labels to process: %d', len(labelsarray))
+        logging.info('Labels to process: %d', len(labels))
+        logging.info('Labels to process on rank 0: %d', len(labelsarray))
     for l in labelsarray:
         tstart = time()
         object_mask = (seg_array == l)
