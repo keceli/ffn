@@ -29,6 +29,7 @@ import numpy as np
 from scipy.ndimage import filters
 
 from mpi4py import MPI
+from time import time
 
 FLAGS = flags.FLAGS
 
@@ -218,6 +219,7 @@ def compute_partitions(seg_array,
     if _rank == 0:
         logging.info('Labels to process: %d', len(labelsarray))
     for l in labelsarray:
+        tstart = time()
         object_mask = (seg_array == l)
 
         svt = _summed_volume_table(object_mask)
@@ -235,7 +237,7 @@ def compute_partitions(seg_array,
         output[object_mask & (active_fraction >= thresholds[-1]) &
                (output == 0)] = len(thresholds) + 1
         if _rank == 0:
-            logging.info('Done processing %d', l)
+            logging.info('Done processing %d in %f seconds', l, time()-tstart)
     _comm.Reduce(output,reducedoutput,MPI.SUM,root=0)
     if _rank == 0:
         logging.info('Nonzero values: %d', np.sum(output > 0))
@@ -256,6 +258,7 @@ def adjust_bboxes(bboxes, lom_radius):
 
 def main(argv):
     del argv  # Unused.
+    tzero = time()
     path, dataset = FLAGS.input_volume.split(':')
     if _rank == 0:
         logging.info('Read hdf5 file {}'.format(path))
@@ -297,6 +300,8 @@ def main(argv):
             ds.attrs['bounding_boxes'] = [(b.start, b.size) for b in bboxes]
             ds.attrs['partition_counts'] = np.array(np.unique(partitions,
                                                               return_counts=True))
+        logging.info('Finished in {} seconds.'.format(time()-tzero))
+    return 0
 
 
 if __name__ == '__main__':
