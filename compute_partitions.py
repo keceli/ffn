@@ -95,6 +95,47 @@ def load_mask(mask_configs, box, lom_diam_zyx):
     return mask
 
 
+def get_slice(n,p,r):
+    """
+    Distribute n consecutive things (rows of a matrix , elements of a 1D array)
+    as evenly as possible over p processors and return the slice for rank r.
+    Uneven workload (differs by 1 at most) is on the initial ranks.
+
+    Parameters
+    ----------
+    n:  int, Total number of things to be distributed.
+    p:  int, Total number of processes
+    r:  int, ID of the process (i.e. MPI rank)
+
+    Returns
+    ----------
+    python slice object
+    """
+
+    rstart = 0
+    rend   = n
+    if p >= n:
+        if r < n:
+            rstart = r
+            rend   = r + 1
+        else:
+            rstart = 0
+            rend   = 0
+    else:
+        n = n//p # Integer division PEP-238
+        remainder = n%p
+        rstart    = n * r
+        rend      = n * (r+1)
+        if remainder:
+            if r >= remainder:
+                rstart += remainder
+                rend   += remainder
+            else:
+                rstart += r
+                rend   += r + 1
+    return slice(rstart, rend)
+
+
 def compute_partitions(seg_array,
                        thresholds,
                        lom_radius,
