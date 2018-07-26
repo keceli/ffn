@@ -28,6 +28,8 @@ import h5py
 import numpy as np
 from scipy.ndimage import filters
 
+from mpi4py import MPI
+
 FLAGS = flags.FLAGS
 
 flags.DEFINE_string('input_volume', None,
@@ -54,6 +56,9 @@ flags.DEFINE_integer('min_size', 10000,
                      'Minimum number of voxels for a segment to be considered for '
                      'partitioning.')
 
+_comm = MPI.COMM_WORLD
+_size = _comm.Get_size()
+_rank = _comm.Get_rank()
 
 def _summed_volume_table(val):
     """Computes a summed volume table of 'val'."""
@@ -192,7 +197,8 @@ def compute_partitions(seg_array,
             output[mask] = 255
 
     labels = set(np.unique(seg_array))
-    logging.info('Labels to process: %d', len(labels))
+    if _rank == 0:
+        logging.info('Labels to process: %d', len(labels))
 
     if id_whitelist is not None:
         labels &= set(id_whitelist)
@@ -226,10 +232,10 @@ def compute_partitions(seg_array,
 
         output[object_mask & (active_fraction >= thresholds[-1]) &
                (output == 0)] = len(thresholds) + 1
-
-        logging.info('Done processing %d', l)
-
-    logging.info('Nonzero values: %d', np.sum(output > 0))
+        if _rank == 0:
+            logging.info('Done processing %d', l)
+    if _rank == 0:
+        logging.info('Nonzero values: %d', np.sum(output > 0))
 
     return corner, output
 
@@ -248,7 +254,7 @@ def adjust_bboxes(bboxes, lom_radius):
 def main(argv):
     del argv  # Unused.
     path, dataset = FLAGS.input_volume.split(':')
-    with h5py.File(path) as f:
+    with h5py.File(path,'r') as f:
         segmentation = f[dataset]
         bboxes = []
         for name, v in segmentation.attrs.items():
@@ -271,16 +277,17 @@ def main(argv):
     bboxes = adjust_bboxes(bboxes, np.array(lom_radius))
 
     path, dataset = FLAGS.output_volume.split(':')
-    with h5py.File(path, 'w') as f:
-        ds = f.create_dataset(dataset, shape=shape, dtype=np.uint8, fillvalue=255,
-                              chunks=True, compression='gzip')
-        s = partitions.shape
-        ds[corner[2]:corner[2] + s[0],
-           corner[1]:corner[1] + s[1],
-           corner[0]:corner[0] + s[2]] = partitions
-        ds.attrs['bounding_boxes'] = [(b.start, b.size) for b in bboxes]
-        ds.attrs['partition_counts'] = np.array(np.unique(partitions,
-                                                          return_counts=True))
+    if _rank == 0:
+        with h5py.File(path, 'w') as f:
+            ds = f.create_dataset(dataset, shape=shape, dtype=np.uint8, fillvalue=255,
+                                  chunks=True, compression='gzip')
+            s = partitions.shape
+            ds[corner[2]:corner[2] + s[0],
+               corner[1]:corner[1] + s[1],
+               corner[0]:corner[0] + s[2]] = partitions
+            ds.attrs['bounding_boxes'] = [(b.start, b.size) for b in bboxes]
+            ds.attrs['partition_counts'] = np.array(np.unique(partitions,
+                                                              return_counts=True))
 
 
 if __name__ == '__main__':
