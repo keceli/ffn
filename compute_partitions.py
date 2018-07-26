@@ -127,10 +127,10 @@ def get_slice(n,p,r):
             rstart = 0
             rend   = 0
     else:
-        n = n//p # Integer division PEP-238
-        remainder = n%p
-        rstart    = n * r
-        rend      = n * (r+1)
+        d         = n // p
+        remainder = n % p
+        rstart    = d * r
+        rend      = d * (r+1)
         if remainder:
             if r >= remainder:
                 rstart += remainder
@@ -197,8 +197,6 @@ def compute_partitions(seg_array,
             output[mask] = 255
 
     labels = set(np.unique(seg_array))
-    if _rank == 0:
-        logging.info('Labels to process: %d', len(labels))
 
     if id_whitelist is not None:
         labels &= set(id_whitelist)
@@ -215,6 +213,10 @@ def compute_partitions(seg_array,
     # Don't create a mask for the background component.
     labelsarray = labelsarray[labelsarray != 0]
     labelsarray.sort()
+    labelsarray = labelsarray[get_slice(len(labelsarray),_size,_rank)]
+    reducedoutput = np.zeros(seg_array[valid_sel].shape, dtype=np.uint8)
+    if _rank == 0:
+        logging.info('Labels to process: %d', len(labelsarray))
     for l in labelsarray:
         object_mask = (seg_array == l)
 
@@ -234,10 +236,11 @@ def compute_partitions(seg_array,
                (output == 0)] = len(thresholds) + 1
         if _rank == 0:
             logging.info('Done processing %d', l)
+    _comm.Reduce(output,reducedoutput,MPI.SUM,root=0)
     if _rank == 0:
         logging.info('Nonzero values: %d', np.sum(output > 0))
 
-    return corner, output
+    return corner, reducedoutput
 
 
 def adjust_bboxes(bboxes, lom_radius):
@@ -254,8 +257,12 @@ def adjust_bboxes(bboxes, lom_radius):
 def main(argv):
     del argv  # Unused.
     path, dataset = FLAGS.input_volume.split(':')
+    if _rank == 0:
+        logging.info('Read hdf5 file {}'.format(path))
     with h5py.File(path,'r') as f:
         segmentation = f[dataset]
+        if _rank == 0:
+            logging.info('Done reading.')
         bboxes = []
         for name, v in segmentation.attrs.items():
             if name.startswith('bounding_boxes'):
@@ -269,6 +276,8 @@ def main(argv):
 
         shape = segmentation.shape
         lom_radius = [int(x) for x in FLAGS.lom_radius]
+        if _rank == 0:
+            logging.info('Compute partitions')
         corner, partitions = compute_partitions(
             segmentation[...], [float(x) for x in FLAGS.thresholds], lom_radius,
             FLAGS.id_whitelist, FLAGS.exclusion_regions, FLAGS.mask_configs,
