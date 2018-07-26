@@ -164,11 +164,11 @@ def compute_partitions(seg_array,
         output[mask] = 255
 
     fov_volume = np.prod(lom_diam_zyx)
-    for l in labels:
-        # Don't create a mask for the background component.
-        if l == 0:
-            continue
-
+    labelsarray = np.array(list(labels),dtype=np.int32)
+    # Don't create a mask for the background component.
+    labelsarray = labelsarray[labelsarray != 0]
+    labelsarray.sort()
+    for l in labelsarray:
         object_mask = (seg_array == l)
 
         svt = _summed_volume_table(object_mask)
