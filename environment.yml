@@ -1,0 +1,10 @@
+name: ffn
+
+dependencies:
+  - numpy
+  - scipy
+  - tensorflow
+  - h5py
+  - scikit-image
+  - Pillow
+  - absl-py
