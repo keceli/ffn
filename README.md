@@ -27,6 +27,10 @@ are available on your system:
 The code has been tested on an Ubuntu 16.04.3 LTS system with the library
 versions listed above, and equipped with a Tesla P100 GPU.
 
+You can create a new conda environment with the required packages:
+```shell
+conda env create -f environment.yml
+```
 # Training
 
 FFN networks can be trained with the `train.py` script, which expects a
