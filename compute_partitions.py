@@ -50,7 +50,7 @@ flags.DEFINE_list('exclusion_regions', None,
                   'List of (x, y, z, r) tuples specifying spherical regions to '
                   'mark as excluded (i.e. set the output value to 255).')
 flags.DEFINE_string('mask_configs', None,
-                    'MaskConfigs proto in text foramt. Any locations where at '
+                    'MaskConfigs proto in text format. Any locations where at '
                     'least one voxel of the LOM is masked will be marked as '
                     'excluded.')
 flags.DEFINE_integer('min_size', 10000,
@@ -288,6 +288,8 @@ def main(argv):
         lom_radius = [int(x) for x in FLAGS.lom_radius]
         if _rank == 0:
             logging.info('Compute partitions')
+            logging.info('Segmantion shape: {}'.format(shape))
+            logging.info('Bounding boxes: {}'.format(bboxes))
         corner, partitions = compute_partitions(
             segmentation[...], [float(x) for x in FLAGS.thresholds], lom_radius,
             FLAGS.id_whitelist, FLAGS.exclusion_regions, FLAGS.mask_configs,
@@ -297,6 +299,10 @@ def main(argv):
 
     path, dataset = FLAGS.output_volume.split(':')
     if _rank == 0:
+        logging.info('Partition shape : {}'.format(partitions.shape))
+        logging.info('Bounding boxes  : {}'.format(bboxes))
+        logging.info('Corner          : {}'.format(corner))
+        logging.info('Creating hdf5 file for the partitions...')
         with h5py.File(path, 'w') as f:
             ds = f.create_dataset(dataset, shape=shape, dtype=np.uint8, fillvalue=255,
                                   chunks=True, compression='gzip')
