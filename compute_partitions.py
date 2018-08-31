@@ -198,9 +198,15 @@ def compute_partitions(seg_array,
             output[mask] = 255
 
     labels = set(np.unique(seg_array))
-
+    if _rank == 0:
+        logging.info('Number of labels: %d', len(labels))
+        logging.info(labels)
+        logging.info(id_whitelist)
     if id_whitelist is not None:
-        labels &= set(id_whitelist)
+        id_whitelist = {int(x) for x in id_whitelist}
+        labels &= id_whitelist
+        if _rank == 0:
+            logging.info('Labels to process after whitelist: %d', len(labels))
 
     mask = load_mask(mask_configs,
                      bounding_box.BoundingBox(
