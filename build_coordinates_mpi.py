@@ -66,7 +66,7 @@ def main(argv):
 
             uniques, counts = np.unique(partitions, return_counts=True)
             for val, cnt in zip(uniques, counts):
-                logging.info('Unique value: {}, count: {}'.format(val.cnt))
+                logging.info('Unique value: {}, count: {}'.format(val,cnt))
                 if val == IGNORE_PARTITION:
                     continue
 
@@ -92,17 +92,15 @@ def main(argv):
         tf.python_io.TFRecordCompressionType.GZIP)
     with tf.python_io.TFRecordWriter(FLAGS.coordinate_output,
                                      options=record_options) as writer:
+        logging.info('Writing {} coordinates to a tensorflow record file...'.format(len(indices)))
         for i, coord_idx in indices:
-            logging.info('indices: {}, {}'.format(i,coord_idx))
             z, y, x = np.unravel_index(coord_idx, vol_shapes[i])
-            logging.info('train.Example ...')
             coord = tf.train.Example(features=tf.train.Features(feature=dict(
                 center=_int64_feature([mx + x, my + y, mz + z]),
                 label_volume_name=_bytes_feature(vol_labels[i].encode('utf-8'))
             )))
-            logging.info('writing...')
             writer.write(coord.SerializeToString())
-
+    logging.info('Writing completed for tensorflow record file: {}'.format(FLAGS.coordinate_output))
 
 if __name__ == '__main__':
     flags.mark_flag_as_required('margin')
