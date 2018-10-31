@@ -1,3 +1,5 @@
+[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/keceli/ffn/master?filepath=notebooks%2Fcompute_partitions.ipynb)
+
 # Flood-Filling Networks
 
 Flood-Filling Networks (FFNs) are a class of neural networks designed for
