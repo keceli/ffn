@@ -30,6 +30,9 @@ Version centos7-tf1.11.0-torch0.4.1
 
     # Add cupti to the path for profiling:
 #    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/extras/CUPTI/lib64
+    # for MPICH:
+    export PATH=/usr/local/mpich/install/bin/:$PATH
+    export LD_LIBRARY_PATH=/usr/local/mpich/install/lib/:$LD_LIBRARY_PATH
 
  #   source scl_source enable devtoolset-4
      export PATH=$PATH:/usr/local/mpich/install/bin
@@ -46,24 +49,6 @@ Version centos7-tf1.11.0-torch0.4.1
     yum install -y python-devel python-pip  python-setuptools
     yum install -y hdf5
 
-
-    # pip basics
-    pip --no-cache-dir --disable-pip-version-check install --upgrade setuptools 
-    pip --no-cache-dir --disable-pip-version-check install 'matplotlib<3.0' # for python2.7
-    pip --no-cache-dir --disable-pip-version-check install 'ipython<6.0'    # for python2.7
-    pip --no-cache-dir --disable-pip-version-check install 'ipykernel<5.0'  # for python2.7
-    pip --no-cache-dir --disable-pip-version-check install numpy wheel zmq six pygments pyyaml cython gputil psutil humanize h5py tqdm scipy seaborn tables
-    pip --no-cache-dir --disable-pip-version-check install  pandas scikit-image scikit-learn Pillow opencv-python
-    pip --no-cache-dir --disable-pip-version-check install jupyter notebook
-
-
-    # tensorflow
-    pip --no-cache-dir --disable-pip-version-check install --upgrade tensorflow-gpu==1.12.0
-    pip --no-cache-dir --disable-pip-version-check install tensorboard
-
-    # keras
-    pip --no-cache-dir --disable-pip-version-check install keras
-
     #mpich
     wget -q http://www.mpich.org/static/downloads/3.2.1/mpich-3.2.1.tar.gz
     tar xf mpich-3.2.1.tar.gz
@@ -78,7 +63,28 @@ Version centos7-tf1.11.0-torch0.4.1
     export PATH=$PATH:/usr/local/mpich//install/bin
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/mpich/install/lib
     cd -
-   
+ 
+
+    # pip basics
+    pip --no-cache-dir --disable-pip-version-check install --upgrade setuptools 
+    pip --no-cache-dir --disable-pip-version-check install 'matplotlib<3.0' # for python2.7
+    pip --no-cache-dir --disable-pip-version-check install 'ipython<6.0'    # for python2.7
+    pip --no-cache-dir --disable-pip-version-check install 'ipykernel<5.0'  # for python2.7
+    pip --no-cache-dir --disable-pip-version-check install numpy wheel zmq six pygments pyyaml cython gputil psutil humanize h5py tqdm scipy seaborn tables
+    pip --no-cache-dir --disable-pip-version-check install  pandas scikit-image scikit-learn Pillow opencv-python
+    pip --no-cache-dir --disable-pip-version-check install jupyter notebook
+
+
+    # tensorflow
+    pip --no-cache-dir --disable-pip-version-check install --upgrade tensorflow-gpu==1.11.0
+    pip --no-cache-dir --disable-pip-version-check install tensorboard
+
+    # keras
+    pip --no-cache-dir --disable-pip-version-check install keras
+
+    # tensorflow with mkl-dnn:
+    pip install https://storage.googleapis.com/intel-optimized-tensorflow/tensorflow-1.11.0-cp27-cp27mu-linux_x86_64.whl
+  
     # mpi and horovod
     pip --no-cache-dir --disable-pip-version-check install mpi4py
     HOROVOD_WITH_TENSORFLOW=1 pip --no-cache-dir --disable-pip-version-check install horovod==0.15.0
