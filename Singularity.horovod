@@ -92,3 +92,5 @@ Version centos7-tf1.11.0-torch0.4.1
    # ffn
     git clone https://github.com/google/ffn.git
     pip --no-cache-dir --disable-pip-version-check install h5py
+
+    git clone https://github.com/wushidonguc/distributed_ffn.git
