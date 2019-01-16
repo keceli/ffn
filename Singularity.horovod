@@ -32,7 +32,8 @@ Version centos7-tf1.11.0-torch0.4.1
 #    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/extras/CUPTI/lib64
 
  #   source scl_source enable devtoolset-4
-
+     export PATH=$PATH:/usr/local/mpich/install/bin
+     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/mpich/install/lib
 %post
     
     # yum basics
@@ -63,12 +64,25 @@ Version centos7-tf1.11.0-torch0.4.1
     # keras
     pip --no-cache-dir --disable-pip-version-check install keras
 
-  # ffn
+    #mpich
+    wget -q http://www.mpich.org/static/downloads/3.2.1/mpich-3.2.1.tar.gz
+    tar xf mpich-3.2.1.tar.gz
+    rm mpich-3.2.1.tar.gz
+    cd mpich-3.2.1
+    # disable the addition of the RPATH to compiled executables
+    # this allows us to override the MPI libraries to use those
+    # found via LD_LIBRARY_PATH
+    ./configure --prefix=/usr/local/mpich/install --disable-wrapper-rpath
+    make -j 4 install
+    # add to local environment to build pi.c
+    export PATH=$PATH:/usr/local/mpich//install/bin
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/mpich/install/lib
+    cd -
+   
+    # mpi and horovod
+    pip --no-cache-dir --disable-pip-version-check install mpi4py
+    HOROVOD_WITH_TENSORFLOW=1 pip --no-cache-dir --disable-pip-version-check install horovod==0.15.0
+  
+   # ffn
     git clone https://github.com/google/ffn.git
     pip --no-cache-dir --disable-pip-version-check install h5py
-
-  # horovod
-	ldconfig /usr/local/cuda/lib64/stubs
-    HOROVOD_GPU_ALLREDUCE=NCCL HOROVOD_WITH_TENSORFLOW=1 HOROVOD_NCCL_HOME=/nccl/build/ pip install --no-cache-dir horovod
-    ldconfig
-    pip --no-cache-dir --disable-pip-version-check install absl-py>=0.1.4
