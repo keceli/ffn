@@ -1,0 +1,35 @@
+Bootstrap: docker
+From: uber/horovod:0.15.2-tf1.12.0-torch1.0.0-py3.5 
+
+%help
+
+To start your container simply try
+singularity exec THIS_CONTAINER.simg bash
+
+To use GPUs, try
+singularity exec --nv THIS_CONTAINER.simg bash
+
+%labels
+Maintainer keceli
+See https://github.com/uber/horovod/blob/master/Dockerfile
+
+#------------
+# Global installation
+#------------
+%environment
+    
+%post
+    
+ 
+
+    # pip basics
+    pip --no-cache-dir --disable-pip-version-check install --upgrade setuptools 
+    pip --no-cache-dir --disable-pip-version-check install numpy wheel zmq six pygments pyyaml cython gputil psutil humanize h5py tqdm scipy seaborn tables
+    pip --no-cache-dir --disable-pip-version-check install  pandas scikit-image scikit-learn Pillow opencv-python
+    pip --no-cache-dir --disable-pip-version-check install git+https://github.com/dask/dask.git
+    
+  
+   # ffn
+    git clone https://github.com/google/ffn.git
+
+    git clone https://github.com/wushidonguc/distributed_ffn.git
