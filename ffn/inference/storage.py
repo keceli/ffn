@@ -169,7 +169,7 @@ def get_corner_from_path(path):
   match = re.search(r'(\d+)_(\d+)_(\d+).npz', os.path.basename(path))
   if match is None:
     raise ValueError('Unrecognized path: %s' % path)
-  coord = tuple([long(x) for x in match.groups()])
+  coord = tuple([int(x) for x in match.groups()])
   return coord[::-1]
 
 
@@ -241,7 +241,7 @@ def threshold_segmentation(segmentation_dir, corner, labels, threshold):
     if not gfile.Exists(prob_path):
       raise ValueError('Cannot find probability map %s' % prob_path)
 
-  with gfile.Open(prob_path, 'r') as f:
+  with gfile.Open(prob_path, 'rb') as f:
     data = np.load(f)
     if 'qprob' not in data:
       raise ValueError('Invalid FFN probability map.')
@@ -256,7 +256,7 @@ def load_origins(segmentation_dir, corner):
     raise ValueError('Segmentation not found: %s, %s' % (segmentation_dir,
                                                          corner))
 
-  with gfile.Open(target_path, 'r') as f:
+  with gfile.Open(target_path, 'rb') as f:
     data = np.load(f)
     return data['origins'].item()
 
@@ -410,7 +410,7 @@ def load_segmentation(segmentation_dir, corner, allow_cpoint=False,
     raise ValueError('Segmentation not found, %s, %r.' %
                      (segmentation_dir, corner))
 
-  with gfile.Open(target_path, 'r') as f:
+  with gfile.Open(target_path, 'rb') as f:
     data = np.load(f)
     if 'segmentation' in data:
       seg = data['segmentation']

@@ -35,6 +35,7 @@ from tensorflow import gfile
 
 from . import storage
 from .inference_utils import timer_counter
+from ..utils import bounding_box
 
 
 def get_starting_location(dists, exclusion_radius):
@@ -101,9 +102,9 @@ def get_canvas(point, radius, runner):
   end = subvol_size + corner
 
   if (np.any(corner < 0) or
-      runner.init_seg_volstore.size.z <= end[0] or
-      runner.init_seg_volstore.size.y <= end[1] or
-      runner.init_seg_volstore.size.x <= end[2]):
+      runner.init_seg_volume.shape[1] <= end[0] or
+      runner.init_seg_volume.shape[2] <= end[1] or
+      runner.init_seg_volume.shape[3] <= end[2]):
     logging.error('Not enough context for: %d, %d, %d; corner: %r; end: %r',
                   point[2], point[1], point[0], corner, end)
     return None, None
@@ -111,13 +112,14 @@ def get_canvas(point, radius, runner):
   return runner.make_canvas(corner, subvol_size, keep_history=True)
 
 
-def process_point(request, runner, point_num):
+def process_point(request, runner, point_num, voxel_size):
   """Runs resegmentation for a specific point.
 
   Args:
     request: ResegmentationRequest proto
     runner: inference Runner object
     point_num: index of the point of interest within the proto
+    voxel_size: (z, y, x) voxel size in physical units
   """
   with timer_counter(runner.counters, 'resegmentation'):
     target_path = get_target_path(request, point_num)
@@ -207,8 +209,7 @@ def process_point(request, runner, point_num):
       logging.info('processing object %d', i)
 
       with timer_counter(canvas.counters, 'edt'):
-        ps = runner.init_seg_volstore.info.pixelsize
-        dists = ndimage.distance_transform_edt(seg, sampling=(ps.z, ps.y, ps.x))
+        dists = ndimage.distance_transform_edt(seg, sampling=voxel_size)
         # Do not seed where not enough context is available.
         dists[:canvas.margin[0], :, :] = 0
         dists[:, :canvas.margin[1], :] = 0
