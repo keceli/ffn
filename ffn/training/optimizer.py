@@ -18,7 +18,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import logging
+
 import tensorflow as tf
+import horovod.tensorflow as hvd
 
 from absl import flags
 
@@ -40,22 +43,30 @@ flags.DEFINE_float('adam_beta2', 0.999, 'Gradient^2 decay term for Adam.')
 flags.DEFINE_float('epsilon', 1e-8, 'Epsilon term for RMSProp and Adam.')
 
 
-def optimizer_from_flags():
-  lr = FLAGS.learning_rate
+def optimizer_from_flags(lr):
+    
+#  # Horovod: Scale learning rate linearly with number of Horovod ranks
+#  lr = FLAGS.learning_rate * hvd.size()
+
   if FLAGS.optimizer == 'momentum':
-    return tf.train.MomentumOptimizer(lr, FLAGS.momentum)
+    opt = tf.train.MomentumOptimizer(lr, FLAGS.momentum)
   elif FLAGS.optimizer == 'sgd':
-    return tf.train.GradientDescentOptimizer(lr)
+    opt = tf.train.GradientDescentOptimizer(lr)
   elif FLAGS.optimizer == 'adagrad':
-    return tf.train.AdagradOptimizer(lr)
+    opt = tf.train.AdagradOptimizer(lr)
   elif FLAGS.optimizer == 'adam':
-    return tf.train.AdamOptimizer(learning_rate=lr,
+    opt = tf.train.AdamOptimizer(learning_rate=lr,
                                   beta1=FLAGS.adam_beta1,
                                   beta2=FLAGS.adam_beta2,
                                   epsilon=FLAGS.epsilon)
   elif FLAGS.optimizer == 'rmsprop':
-    return tf.train.RMSPropOptimizer(lr, FLAGS.rmsprop_decay,
+    opt = tf.train.RMSPropOptimizer(lr, FLAGS.rmsprop_decay,
                                      momentum=FLAGS.momentum,
                                      epsilon=FLAGS.epsilon)
   else:
     raise ValueError('Unknown optimizer: %s' % FLAGS.optimizer)
+
+  # Horovod: Add Horovod Distributed Optimizer
+  opt = hvd.DistributedOptimizer(opt)
+  
+  return opt
