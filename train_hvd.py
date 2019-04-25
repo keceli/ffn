@@ -31,8 +31,10 @@ import itertools
 import json
 from tensorflow import logging
 import os
+import sys
 try:
   logging.set_verbosity(logging.ERROR)
+  logging._logger.propagate = False
   os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 except:
   pass
@@ -64,8 +66,19 @@ from ffn.training import augmentation
 # pylint: disable=unused-import
 from ffn.training import optimizer
 # pylint: enable=unused-import
-import horovod.tensorflow as hvd
-
+try:
+  import horovod.tensorflow as hvd
+except:
+  class hvd():
+    __version__='0.0.0'
+    def rank():
+        return 0
+    def local_rank():
+        return 0
+    def size():
+        return 1
+    def init():
+        pass
 FLAGS = flags.FLAGS
 
 # Options related to training data.
@@ -89,7 +102,7 @@ flags.DEFINE_string('model_name', None,
                     'Name of the model to train. Format: '
                     '[<packages>.]<module_name>.<model_class>, if packages is '
                     'missing "ffn.training.models" is used as default.')
-flags.DEFINE_string('model_args', None,
+flags.DEFINE_string('model_args', "{\"depth\": 12, \"fov_size\": [33, 33, 33], \"deltas\": [8, 8, 8]}",
                     'JSON string with arguments to be passed to the model '
                     'constructor.')
 
@@ -414,7 +427,7 @@ def define_data_input(model, queue_batch=None):
   # coordinate files or from saved hard/important examples
   if FLAGS.sharding_rule == 0:
     coord, volname = inputs.load_patch_coordinates(FLAGS.train_coords)
-  elif FLAGS.sharding_rule == 1:
+  elif FLAGS.sharding_rule == 1 and 'horovod' in sys.modules:
     d = tf.data.TFRecordDataset(FLAGS.train_coords, compression_type='GZIP')
     d = d.shard(hvd.size(), hvd.rank())
     d = d.map(parser_fn)
@@ -426,6 +439,7 @@ def define_data_input(model, queue_batch=None):
       coord, volname, label_size, label_volume_map)
 
   label_shape = [1] + label_size[::-1] + [1]
+  #label_shape = [1] + [1] + label_size[::-1] # NCDHW
   labels = tf.reshape(labels, label_shape)
 
   loss_weights = tf.constant(np.ones(label_shape, dtype=np.float32))
@@ -689,8 +703,11 @@ def train_ffn(model_cls, **model_kwargs):
     summary_writer = None
     saver = tf.train.Saver(keep_checkpoint_every_n_hours=0.25)
     scaffold = tf.train.Scaffold(saver=saver)
-    hooks = [hvd.BroadcastGlobalVariablesHook(0),
+    if 'horovod' in sys.modules:
+      hooks = [hvd.BroadcastGlobalVariablesHook(0),
              tf.train.StopAtStepHook(last_step=FLAGS.max_steps),]
+    else:
+      hooks = [tf.train.StopAtStepHook(last_step=FLAGS.max_steps),]
 
     config=tf.ConfigProto(log_device_placement=False,
                           allow_soft_placement=True,
@@ -788,11 +805,23 @@ def main(argv=()):
   random.seed(seed)
   if hvd.rank() == 0:
     #logging.basicConfig(level=logging.INFO)
-    logging.set_verbosity(logging.INFO)
+    #logging.set_verbosity(logging.INFO)
     logging.info('Rank: %d / %d' % (hvd.rank(), hvd.size()))
     logging.info('Random seed: %r', seed)
     logging.info('Learning rate: %r', get_learning_rate(1,FLAGS.batch_size))
-
+    try:
+      logging.info('Python version: {}'.format(sys.version))
+      envvars = os.environ
+      for envvar in envvars:
+        logging.info('{}:{}'.format(envvar,envvars[envvar]))
+      logging.info('numpy version: {}'.format(np.__version__))
+      logging.info('tensorflow version: {}'.format(tf.__version__))
+      logging.info('horovod version: {}'.format(hvd.__version__))
+      import mkl
+      logging.info('MKL: {}'.format(mklstr))
+      mklstr = mkl.get_version_string()
+    except:
+      pass
   train_ffn(model_class, batch_size=FLAGS.batch_size,
             **json.loads(FLAGS.model_args))
 
