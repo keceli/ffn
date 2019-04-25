@@ -19,10 +19,12 @@ from __future__ import division
 from __future__ import print_function
 
 import logging
-
+import sys
 import tensorflow as tf
-import horovod.tensorflow as hvd
-
+try:
+  import horovod.tensorflow as hvd
+except:
+  pass
 from absl import flags
 
 
@@ -44,7 +46,7 @@ flags.DEFINE_float('epsilon', 1e-8, 'Epsilon term for RMSProp and Adam.')
 
 
 def optimizer_from_flags(lr):
-    
+
 #  # Horovod: Scale learning rate linearly with number of Horovod ranks
 #  lr = FLAGS.learning_rate * hvd.size()
 
@@ -65,8 +67,8 @@ def optimizer_from_flags(lr):
                                      epsilon=FLAGS.epsilon)
   else:
     raise ValueError('Unknown optimizer: %s' % FLAGS.optimizer)
-
-  # Horovod: Add Horovod Distributed Optimizer
-  opt = hvd.DistributedOptimizer(opt)
-  
+  if 'horovod' in sys.modules:
+    opt = hvd.DistributedOptimizer(opt)
+  else:
+    pass
   return opt
