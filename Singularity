@@ -52,7 +52,7 @@ Version centos7-tf1.11.0-torch0.4.1
     pip --no-cache-dir --disable-pip-version-check install 'ipython<6.0'    # for python2.7
     pip --no-cache-dir --disable-pip-version-check install 'ipykernel<5.0'  # for python2.7
     pip --no-cache-dir --disable-pip-version-check install numpy wheel zmq six pygments pyyaml cython gputil psutil humanize h5py tqdm scipy seaborn tables
-    pip --no-cache-dir --disable-pip-version-check install  pandas scikit-image scikit-learn Pillow opencv-python
+    pip --no-cache-dir --disable-pip-version-check install  pandas scikit-image scikit-learn Pillow opencv-python cloud-volume
     pip --no-cache-dir --disable-pip-version-check install jupyter notebook
 
 
