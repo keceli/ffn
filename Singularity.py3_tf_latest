@@ -24,14 +24,10 @@ Version centos7-mkldnn-tf1.11.0-torch0.4.1
 #------------
 %environment
 
-    # for ROOT
-    export ROOTSYS=/usr/local/root
-    export PATH=${ROOTSYS}/bin:${PATH}
-    export PYTHONPATH=${ROOTSYS}/lib:${PYTHONPATH}
-    export LD_LIBRARY_PATH=/usr/local/root/lib/:$LD_LIBRARY_PATH
+    export PYTHONPATH=/opt/rh/rh-python36/root/usr/lib/python3.6/site-packages/:/opt/rh/rh-python36/root/usr/lib64/python3.6/site-packages/
 
     # for MPICH:
-    export PATH=/usr/local/mpich/install/bin/:$PATH
+    export PATH=/opt/rh/rh-python36/root/bin/:/usr/local/mpich/install/bin/:$PATH
     export LD_LIBRARY_PATH=/usr/local/mpich/install/lib/:$LD_LIBRARY_PATH
 
 %post
@@ -63,16 +59,6 @@ Version centos7-mkldnn-tf1.11.0-torch0.4.1
     env | sort
     cd ..
     rm -rf mpich-3.2.1
-
-    # ROOT
-    wget https://root.cern.ch/download/root_v6.14.04.Linux-centos7-x86_64-gcc4.8.tar.gz
-    tar -xzf root_v6.14.04.Linux-centos7-x86_64-gcc4.8.tar.gz
-    rm root_v6.14.04.Linux-centos7-x86_64-gcc4.8.tar.gz
-    mv root /usr/local/root
-    export ROOTSYS=/usr/local/root
-    export PATH=${ROOTSYS}/bin:${PATH}
-    export LD_LIBRARY_PATH=${ROOTSYS}/lib:${LD_LIBRARY_PATH}
-    export PYTHONPATH=${ROOTSYS}/lib:${PYTHONPATH}
 
     # pip basics
     pip3 --no-cache-dir --disable-pip-version-check install --upgrade setuptools 
