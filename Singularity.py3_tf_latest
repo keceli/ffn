@@ -16,7 +16,7 @@ To use GPUs, try
 singularity exec THIS_CONTAINER.simg bash
 
 %labels
-Maintainer coreyjadams
+Maintainer keceli,coreyjadams
 Version centos7-mkldnn-tf1.11.0-torch0.4.1
 
 #------------
@@ -32,7 +32,6 @@ Version centos7-mkldnn-tf1.11.0-torch0.4.1
 
 %post
 
-    # yum
     yum update -y
     yum groupinstall -y "Development Tools"
     yum install -y epel-release
