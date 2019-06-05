@@ -22,13 +22,6 @@ Version centos7-mkldnn-tf1.11.0-torch0.4.1
 #------------
 # Global installation
 #------------
-%environment
-
-    export PYTHONPATH=/opt/rh/rh-python36/root/usr/lib/python3.6/site-packages/:/opt/rh/rh-python36/root/usr/lib64/python3.6/site-packages/
-
-    # for MPICH:
-    export PATH=/opt/rh/rh-python36/root/bin/:/usr/local/mpich/install/bin/:$PATH
-    export LD_LIBRARY_PATH=/usr/local/mpich/install/lib/:$LD_LIBRARY_PATH
 
 %post
 
@@ -52,14 +45,12 @@ Version centos7-mkldnn-tf1.11.0-torch0.4.1
     # found via LD_LIBRARY_PATH
     ./configure --prefix=/usr/local/mpich/install --disable-wrapper-rpath
     make -j 4 install
-    # add to local environment to build pi.c
-    export PATH=$PATH:/usr/local/mpich//install/bin
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/mpich//install/lib
+    export PATH=$PATH:/usr/local/mpich/install/bin
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/mpich/install/lib
     env | sort
     cd ..
     rm -rf mpich-3.2.1
 
-    # pip basics
     pip3 --no-cache-dir --disable-pip-version-check install --upgrade setuptools 
     pip3 --no-cache-dir --disable-pip-version-check install 'matplotlib' 
     pip3 --no-cache-dir --disable-pip-version-check install 'ipython'    
