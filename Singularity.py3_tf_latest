@@ -69,3 +69,11 @@ Version centos7-mkldnn-tf1.11.0-torch0.4.1
     
     # keras
     pip3 --no-cache-dir --disable-pip-version-check install keras
+    
+    #klab_utils
+    mkdir /container
+    cd /container
+    git clone https://github.com/Hanyu-Li/klab_utils
+    cd klab_utils
+    pip3 --no-cache-dir --disable-pip-version-check install -r requirements.txt
+    pip3 --no-cache-dir --disable-pip-version-check install -e .
