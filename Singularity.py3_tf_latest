@@ -66,7 +66,7 @@ export PATH=/opt/rh/rh-python36/root/bin/:$PATH
     pip3 --no-cache-dir --disable-pip-version-check install intel-tensorflow
 
     # mpi and horovod
-    pip --no-cache-dir --disable-pip-version-check install mpi4py
+    pip3 --no-cache-dir --disable-pip-version-check install mpi4py
     HOROVOD_WITH_TENSORFLOW=1 pip --no-cache-dir --disable-pip-version-check install horovod
     
     # keras
