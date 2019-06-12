@@ -22,6 +22,8 @@ Version centos7-mkldnn-tf1.11.0-torch0.4.1
 #------------
 # Global installation
 #------------
+%environment
+export PATH=/opt/rh/rh-python36/root/bin/:$PATH
 
 %post
 
