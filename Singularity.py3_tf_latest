@@ -58,7 +58,7 @@ export PATH=/opt/rh/rh-python36/root/bin/:$PATH
     pip3 --no-cache-dir --disable-pip-version-check install 'ipython'    
     pip3 --no-cache-dir --disable-pip-version-check install 'ipykernel'
     pip3 --no-cache-dir --disable-pip-version-check install numpy wheel zmq six pygments pyyaml cython gputil psutil humanize h5py tqdm scipy seaborn tables
-    pip3 --no-cache-dir --disable-pip-version-check install  pandas scikit-image scikit-learn Pillow opencv-python
+    pip3 --no-cache-dir --disable-pip-version-check install  scikit-image scikit-learn Pillow opencv-python
     pip3 --no-cache-dir --disable-pip-version-check install jupyter notebook
     pip3 --no-cache-dir --disable-pip-version-check install cloud-volume
 
