@@ -38,10 +38,10 @@ export PATH=/opt/rh/rh-python36/root/bin/:$PATH
     scl enable rh-python36 bash
     yum install -y easy_install-3.6 python36-pip
     # install MPICH
-    wget -q http://www.mpich.org/static/downloads/3.2.1/mpich-3.2.1.tar.gz
-    tar xf mpich-3.2.1.tar.gz
-    rm mpich-3.2.1.tar.gz
-    cd mpich-3.2.1
+    wget -q http://www.mpich.org/static/downloads/3.3.1/mpich-3.3.1.tar.gz
+    tar xf mpich-3.3.1.tar.gz
+    rm mpich-3.3.1.tar.gz
+    cd mpich-3.3.1
     # disable the addition of the RPATH to compiled executables
     # this allows us to override the MPI libraries to use those
     # found via LD_LIBRARY_PATH
@@ -51,7 +51,7 @@ export PATH=/opt/rh/rh-python36/root/bin/:$PATH
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/mpich/install/lib
     env | sort
     cd ..
-    rm -rf mpich-3.2.1
+    rm -rf mpich-3.3.1
 
     pip3 --no-cache-dir --disable-pip-version-check install --upgrade setuptools 
     pip3 --no-cache-dir --disable-pip-version-check install 'matplotlib' 
