@@ -40,8 +40,8 @@ def import_symbol(specifier, default_packages='ffn.training.models'):
   """
   module_path, symbol_name = specifier.rsplit('.', 1)
   try:
-    logging.info('Importing symbol %s from %s.%s',
-                 symbol_name, default_packages, module_path)
+   # logging.info('Importing symbol %s from %s.%s',
+   #              symbol_name, default_packages, module_path)
     module = importlib.import_module(default_packages + '.' + module_path)
   except ImportError as e:
     logging.info(e)

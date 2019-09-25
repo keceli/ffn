@@ -30,13 +30,15 @@ from functools import partial
 import itertools
 import json
 from tensorflow import logging
+#import logging
 import os
 import sys
 try:
   logging.set_verbosity(logging.ERROR)
-  logging._logger.propagate = False
+#  logging._logger.propagate = False
   os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 except:
+  print("Could not set verbosity")
   pass
 import random
 import time
@@ -425,6 +427,11 @@ def define_data_input(model, queue_batch=None):
 
   # Fetch a single coordinate and volume name from a queue reading the
   # coordinate files or from saved hard/important examples
+  import os.path
+  if os.path.isfile(FLAGS.train_coords):
+    logging.info('{} exists.'.format(FLAGS.train_coords))
+  else:
+    logging.info('{} does not exist.'.format(FLAGS.train_coords))
   if FLAGS.sharding_rule == 0:
     coord, volname = inputs.load_patch_coordinates(FLAGS.train_coords)
   elif FLAGS.sharding_rule == 1 and 'horovod' in sys.modules:
@@ -701,7 +708,7 @@ def train_ffn(model_cls, **model_kwargs):
       save_flags()
 
     summary_writer = None
-    saver = tf.train.Saver(keep_checkpoint_every_n_hours=0.25)
+    saver = tf.train.Saver(keep_checkpoint_every_n_hours=0.25,max_to_keep=20)
     scaffold = tf.train.Scaffold(saver=saver)
     if 'horovod' in sys.modules:
       hooks = [hvd.BroadcastGlobalVariablesHook(0),
@@ -804,11 +811,13 @@ def main(argv=()):
   seed = int(time.time() + hvd.rank() * 3600 * 24)
   random.seed(seed)
   if hvd.rank() == 0:
-    #logging.basicConfig(level=logging.INFO)
-    #logging.set_verbosity(logging.INFO)
+   # logging.basicConfig(level=logging.INFO) # not for tflogging
+    logging.set_verbosity(logging.INFO)
+   # os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'
     logging.info('Rank: %d / %d' % (hvd.rank(), hvd.size()))
     logging.info('Random seed: %r', seed)
     logging.info('Learning rate: %r', get_learning_rate(1,FLAGS.batch_size))
+    logging.info('Batch size: %d', FLAGS.batch_size)
     try:
       logging.info('Python version: {}'.format(sys.version))
       envvars = os.environ
