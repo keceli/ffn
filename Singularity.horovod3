@@ -25,7 +25,7 @@ See https://github.com/uber/horovod/blob/master/Dockerfile
     # pip basics
     pip --no-cache-dir --disable-pip-version-check install --upgrade setuptools 
     pip --no-cache-dir --disable-pip-version-check install numpy wheel zmq six pygments pyyaml cython gputil psutil humanize h5py tqdm scipy seaborn tables
-    pip --no-cache-dir --disable-pip-version-check install  pandas scikit-image scikit-learn Pillow opencv-python
+    pip --no-cache-dir --disable-pip-version-check install  pandas scikit-image scikit-learn Pillow opencv-python cloud-volume
     pip --no-cache-dir --disable-pip-version-check install git+https://github.com/dask/dask.git
     
   
