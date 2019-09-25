@@ -246,6 +246,9 @@ def containing(*boxes):
     end = np.maximum(end, box.end)
   return BoundingBox(start=start, end=end)
 
+def _required(bbox):
+  assert bbox is not None
+  return bbox
 
 class OrderlyOverlappingCalculator(object):
   """Helper for calculating orderly overlapping sub-boxes.
