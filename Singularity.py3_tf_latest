@@ -9,16 +9,6 @@ Basic python    : ipython jupyter yaml pygments six zmq wheel h5py tqdm mpi4py h
 Development kit : g++/gcc cython nvcc libqt4-dev python-dev
 Utility kit     : git wget emacs vim openssh-client openmpi
 
-To start your container simply try
-singularity exec THIS_CONTAINER.simg bash
-
-To use GPUs, try
-singularity exec THIS_CONTAINER.simg bash
-
-%labels
-Maintainer keceli,coreyjadams
-Version centos7-mkldnn-tf1.11.0-torch0.4.1
-
 #------------
 # Global installation
 #------------
