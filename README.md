@@ -1,4 +1,5 @@
 [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/keceli/ffn/master?filepath=notebooks%2Fcompute_partitions.ipynb)
+[![https://www.singularity-hub.org/static/img/hosted-singularity--hub-%23e32929.svg](https://www.singularity-hub.org/static/img/hosted-singularity--hub-%23e32929.svg)](https://singularity-hub.org/collections/2027)
 
 # Flood-Filling Networks
 
