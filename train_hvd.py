@@ -431,7 +431,7 @@ def define_data_input(model, queue_batch=None):
   if os.path.isfile(FLAGS.train_coords):
     logging.info('{} exists.'.format(FLAGS.train_coords))
   else:
-    logging.info('{} does not exist.'.format(FLAGS.train_coords))
+    logging.error('{} does not exist.'.format(FLAGS.train_coords))
   if FLAGS.sharding_rule == 0:
     coord, volname = inputs.load_patch_coordinates(FLAGS.train_coords)
   elif FLAGS.sharding_rule == 1 and 'horovod' in sys.modules:
@@ -440,8 +440,12 @@ def define_data_input(model, queue_batch=None):
     d = d.map(parser_fn)
     iterator = d.make_one_shot_iterator()
     coord, volname = iterator.get_next()
+  else:
+    logging.warning("You need to install Horovod to use sharding. Turning sharding off..")
+    FLAGS.sharding_rule = 0
+    coord, volname = inputs.load_patch_coordinates(FLAGS.train_coords)
 
-  # Load object labels (segmentation).
+ # Load object labels (segmentation).
   labels = inputs.load_from_numpylike(
       coord, volname, label_size, label_volume_map)
 
@@ -820,9 +824,6 @@ def main(argv=()):
     logging.info('Batch size: %d', FLAGS.batch_size)
     try:
       logging.info('Python version: {}'.format(sys.version))
-      envvars = os.environ
-      for envvar in envvars:
-        logging.info('{}:{}'.format(envvar,envvars[envvar]))
       logging.info('numpy version: {}'.format(np.__version__))
       logging.info('tensorflow version: {}'.format(tf.__version__))
       logging.info('horovod version: {}'.format(hvd.__version__))
