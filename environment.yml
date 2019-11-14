@@ -1,10 +1,11 @@
-name: ffn
+name: env_ffn
 
 dependencies:
-  - numpy
+  - intel::tensorflow=1.14
   - scipy
-  - tensorflow
   - h5py
   - scikit-image
   - Pillow
   - absl-py
+  - pip:
+        - horovod
