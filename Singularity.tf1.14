@@ -69,3 +69,5 @@ export PATH=/opt/rh/rh-python36/root/bin/:$PATH
     cd klab_utils
     pip3 --no-cache-dir --disable-pip-version-check install -r requirements.txt
     pip3 --no-cache-dir --disable-pip-version-check install -e .
+    cd /container
+    git clone https://github.com/keceli/ffn.git
