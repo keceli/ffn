@@ -23,8 +23,9 @@ import sys
 import tensorflow as tf
 try:
   import horovod.tensorflow as hvd
+  horovodworks=True
 except:
-  pass
+  horovodworks=False
 from absl import flags
 
 
@@ -67,7 +68,7 @@ def optimizer_from_flags(lr):
                                      epsilon=FLAGS.epsilon)
   else:
     raise ValueError('Unknown optimizer: %s' % FLAGS.optimizer)
-  if 'horovod' in sys.modules:
+  if horovodworks:
     opt = hvd.DistributedOptimizer(opt)
   else:
     pass

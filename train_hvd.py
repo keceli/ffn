@@ -70,7 +70,11 @@ from ffn.training import optimizer
 # pylint: enable=unused-import
 try:
   import horovod.tensorflow as hvd
-except:
+  horovodworks = True
+except Exception as e:
+  horovodworks = False
+  logging.error('Horovod not found')
+  logging.error(e)
   class hvd():
     __version__='0.0.0'
     def rank():
@@ -714,7 +718,7 @@ def train_ffn(model_cls, **model_kwargs):
     summary_writer = None
     saver = tf.train.Saver(keep_checkpoint_every_n_hours=0.25,max_to_keep=20)
     scaffold = tf.train.Scaffold(saver=saver)
-    if 'horovod' in sys.modules:
+    if horovodworks:
       hooks = [hvd.BroadcastGlobalVariablesHook(0),
              tf.train.StopAtStepHook(last_step=FLAGS.max_steps),]
     else:
