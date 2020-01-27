@@ -688,6 +688,7 @@ def train_ffn(model_cls, **model_kwargs):
                   model.labels: labels,
                   model.input_patches: patches,
                   model.input_seed: seed,
+                  model.learning_rate: FLAGS.learning_rate,
               })
 
           # Save prediction results in the original seed array so that

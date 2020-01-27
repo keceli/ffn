@@ -47,6 +47,24 @@ def _predict_object_mask(net, depth=9):
 
   return logits
 
+def _predict_object_mask_tf2(net, depth=9):
+  """Computes single-object mask prediction."""
+  conv = tf.layers.conv3d
+  net = conv(net, name='conv0_a', filters=32, kernel_size=(3, 3, 3), padding='SAME')
+  net = conv(net, name='conv0_b', activation=None, filters=32, kernel_size=(3, 3, 3), padding='SAME')
+
+  for i in range(1, depth):
+    with tf.name_scope('residual%d' % i):
+      in_net = net
+      net = tf.nn.relu(net)
+      net = conv(net, name='conv%d_a' % i, filters=32,kernel_size=(3, 3, 3), padding='SAME')
+      net = conv(net, name='conv%d_b' % i, activation=None, filters=32, kernel_size=(3, 3, 3), padding='SAME')
+      net += in_net
+
+  net = tf.nn.relu(net)
+  logits = conv(net, 1, (1, 1, 1), activation=None, name='conv_lom')
+
+  return logits
 
 class ConvStack3DFFNModel(model.FFNModel):
   dim = 3
