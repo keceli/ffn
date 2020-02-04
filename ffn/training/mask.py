@@ -35,7 +35,7 @@ def crop(tensor, offset, crop_shape):
   Returns:
     cropped tensor
   """
-  with tf.name_scope('offset_crop'):
+  with tf.compat.v1.name_scope('offset_crop'):
     shape = tensor.shape_as_list()
 
     # Nothing to do?

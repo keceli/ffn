@@ -88,9 +88,9 @@ def main(argv):
   np.random.shuffle(indices)
 
   logging.info('Saving coordinates.')
-  record_options = tf.python_io.TFRecordOptions(
-      tf.python_io.TFRecordCompressionType.GZIP)
-  with tf.python_io.TFRecordWriter(FLAGS.coordinate_output,
+  record_options = tf.io.TFRecordOptions(
+      tf.compat.v1.python_io.TFRecordCompressionType.GZIP)
+  with tf.io.TFRecordWriter(FLAGS.coordinate_output,
                                    options=record_options) as writer:
     for i, coord_idx in indices:
       z, y, x = np.unravel_index(coord_idx, vol_shapes[i])

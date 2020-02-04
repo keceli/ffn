@@ -25,36 +25,14 @@ from .. import model
 
 # Note: this model was originally trained with conv3d layers initialized with
 # TruncatedNormalInitializedVariable with stddev = 0.01.
-def _predict_object_mask(net, depth=9):
+def _predict_object_mask_tf(net, depth=9):
   """Computes single-object mask prediction."""
-  conv = tf.contrib.layers.conv3d
-  with tf.contrib.framework.arg_scope([conv], num_outputs=32,
-                                      kernel_size=(3, 3, 3),
-                                      padding='SAME'):
-    net = conv(net, scope='conv0_a')
-    net = conv(net, scope='conv0_b', activation_fn=None)
-
-    for i in range(1, depth):
-      with tf.name_scope('residual%d' % i):
-        in_net = net
-        net = tf.nn.relu(net)
-        net = conv(net, scope='conv%d_a' % i)
-        net = conv(net, scope='conv%d_b' % i, activation_fn=None)
-        net += in_net
-
-  net = tf.nn.relu(net)
-  logits = conv(net, 1, (1, 1, 1), activation_fn=None, scope='conv_lom')
-
-  return logits
-
-def _predict_object_mask_tf2(net, depth=9):
-  """Computes single-object mask prediction."""
-  conv = tf.layers.conv3d
+  conv = tf.compat.v1.layers.conv3d
   net = conv(net, name='conv0_a', filters=32, kernel_size=(3, 3, 3), padding='SAME')
   net = conv(net, name='conv0_b', activation=None, filters=32, kernel_size=(3, 3, 3), padding='SAME')
 
   for i in range(1, depth):
-    with tf.name_scope('residual%d' % i):
+    with tf.compat.v1.name_scope('residual%d' % i):
       in_net = net
       net = tf.nn.relu(net)
       net = conv(net, name='conv%d_a' % i, filters=32,kernel_size=(3, 3, 3), padding='SAME')
@@ -78,13 +56,13 @@ class ConvStack3DFFNModel(model.FFNModel):
     self.show_center_slice(self.input_seed)
 
     if self.input_patches is None:
-      self.input_patches = tf.placeholder(
+      self.input_patches = tf.compat.v1.placeholder(
           tf.float32, [1] + list(self.input_image_size[::-1]) +[1],
           name='patches')
 
     net = tf.concat([self.input_patches, self.input_seed], 4)
 
-    with tf.variable_scope('seed_update', reuse=False):
+    with tf.compat.v1.variable_scope('seed_update', reuse=False):
       logit_update = _predict_object_mask(net, self.depth)
 
     logit_seed = self.update_seed(self.input_seed, logit_update)
@@ -100,4 +78,4 @@ class ConvStack3DFFNModel(model.FFNModel):
       self.show_center_slice(self.labels, sigmoid=False)
       self.add_summaries()
 
-    self.saver = tf.train.Saver(keep_checkpoint_every_n_hours=1)
+    self.saver = tf.compat.v1.train.Saver(keep_checkpoint_every_n_hours=1)

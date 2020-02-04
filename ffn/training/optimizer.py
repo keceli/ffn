@@ -52,18 +52,18 @@ def optimizer_from_flags(lr):
 #  lr = FLAGS.learning_rate * hvd.size()
 
   if FLAGS.optimizer == 'momentum':
-    opt = tf.train.MomentumOptimizer(lr, FLAGS.momentum)
+    opt = tf.compat.v1.train.MomentumOptimizer(lr, FLAGS.momentum)
   elif FLAGS.optimizer == 'sgd':
-    opt = tf.train.GradientDescentOptimizer(lr)
+    opt = tf.compat.v1.train.GradientDescentOptimizer(lr)
   elif FLAGS.optimizer == 'adagrad':
-    opt = tf.train.AdagradOptimizer(lr)
+    opt = tf.compat.v1.train.AdagradOptimizer(lr)
   elif FLAGS.optimizer == 'adam':
-    opt = tf.train.AdamOptimizer(learning_rate=lr,
+    opt = tf.compat.v1.train.AdamOptimizer(learning_rate=lr,
                                   beta1=FLAGS.adam_beta1,
                                   beta2=FLAGS.adam_beta2,
                                   epsilon=FLAGS.epsilon)
   elif FLAGS.optimizer == 'rmsprop':
-    opt = tf.train.RMSPropOptimizer(lr, FLAGS.rmsprop_decay,
+    opt = tf.compat.v1.train.RMSPropOptimizer(lr, FLAGS.rmsprop_decay,
                                      momentum=FLAGS.momentum,
                                      epsilon=FLAGS.epsilon)
   else:

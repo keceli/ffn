@@ -26,8 +26,8 @@ class FractionTracker(object):
 
   def __init__(self, name='fraction'):
     # Values are: total, hits.
-    self.var = tf.get_variable(name, [2], tf.int64,
-                               tf.constant_initializer([0, 0]), trainable=False)
+    self.var = tf.compat.v1.get_variable(name, [2], tf.int64,
+                               tf.compat.v1.constant_initializer([0, 0]), trainable=False)
 
   def record_miss(self):
     return self.var.assign_add([1, 0])

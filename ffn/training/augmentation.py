@@ -33,10 +33,10 @@ def reflection(data, decision):
   Returns:
     TF op to conditionally apply reflection.
   """
-  with tf.name_scope('augment_reflection'):
+  with tf.compat.v1.name_scope('augment_reflection'):
     rank = data.get_shape().ndims
     spatial_dims = tf.constant([rank - 2, rank - 3, rank - 4])
-    selected_dims = tf.boolean_mask(spatial_dims, decision)
+    selected_dims = tf.boolean_mask(tensor=spatial_dims, mask=decision)
     return tf.reverse(data, selected_dims)
 
 
@@ -50,13 +50,13 @@ def xy_transpose(data, decision):
   Returns:
     TF op to conditionally apply XY transposition.
   """
-  with tf.name_scope('augment_xy_transpose'):
+  with tf.compat.v1.name_scope('augment_xy_transpose'):
     rank = data.get_shape().ndims
     perm = range(rank)
     perm[rank - 3], perm[rank - 2] = perm[rank - 2], perm[rank - 3]
-    return tf.cond(decision,
-                   lambda: tf.transpose(data, perm),
-                   lambda: data)
+    return tf.cond(pred=decision,
+                   true_fn=lambda: tf.transpose(a=data, perm=perm),
+                   false_fn=lambda: data)
 
 
 def permute_axes(x, permutation, permutable_axes):
@@ -76,9 +76,9 @@ def permute_axes(x, permutation, permutable_axes):
     but with additional static shape information due to the restriction imposed
     by `permutable_axes`.
   """
-  x = tf.convert_to_tensor(x)
+  x = tf.convert_to_tensor(value=x)
   shape = x.shape.as_list()
-  result = tf.transpose(x, permutation)
+  result = tf.transpose(a=x, perm=permutation)
   # Transpose loses shape information because it does not know that the
   # permutation is restricted to the permutable_axes, but we can restore
   # some or all of it.
@@ -149,13 +149,13 @@ class PermuteAndReflect(object):
     self.reflectable_axes = np.array(reflectable_axes, dtype=np.int32)
 
     if self.reflectable_axes.size > 0:
-      self.reflect_decisions = tf.random_uniform([len(self.reflectable_axes)],
+      self.reflect_decisions = tf.random.uniform([len(self.reflectable_axes)],
                                                  seed=reflection_seed) > 0.5
-      self.reflected_axes = tf.boolean_mask(self.reflectable_axes,
-                                            self.reflect_decisions)
+      self.reflected_axes = tf.boolean_mask(tensor=self.reflectable_axes,
+                                            mask=self.reflect_decisions)
 
     if self.permutable_axes.size > 0:
-      self.permutation = tf.random_shuffle(self.permutable_axes,
+      self.permutation = tf.random.shuffle(self.permutable_axes,
                                            seed=permutation_seed)
       # full_permutation must be a list rather than an np.array of int32 because
       # some elements are set to be tensors below.
@@ -174,8 +174,8 @@ class PermuteAndReflect(object):
       The transformed Tensor, retaining as much static shape information as
       possible.
     """
-    x = tf.convert_to_tensor(x)
-    with tf.name_scope('permute_and_reflect'):
+    x = tf.convert_to_tensor(value=x)
+    with tf.compat.v1.name_scope('permute_and_reflect'):
       if self.permutable_axes.size > 0:
         x = permute_axes(x, self.full_permutation, self.permutable_axes)
       if self.reflectable_axes.size > 0:

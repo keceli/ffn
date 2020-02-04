@@ -189,12 +189,12 @@ class EvalTracker(object):
   """Tracks eval results over multiple training steps."""
 
   def __init__(self, eval_shape):
-    self.eval_labels = tf.placeholder(
+    self.eval_labels = tf.compat.v1.placeholder(
         tf.float32, [1] + eval_shape + [1], name='eval_labels')
-    self.eval_preds = tf.placeholder(
+    self.eval_preds = tf.compat.v1.placeholder(
         tf.float32, [1] + eval_shape + [1], name='eval_preds')
     self.eval_loss = tf.reduce_mean(
-        tf.nn.sigmoid_cross_entropy_with_logits(
+        input_tensor=tf.nn.sigmoid_cross_entropy_with_logits(
             logits=self.eval_preds, labels=self.eval_labels))
     self.reset()
     self.eval_threshold = logit(0.9)
@@ -252,9 +252,9 @@ class EvalTracker(object):
     axis_names = 'zyx'
     axis_names = axis_names.replace(axis_names[slice_axis], '')
 
-    return tf.Summary.Value(
+    return tf.compat.v1.Summary.Value(
         tag='final_%s' % axis_names[::-1],
-        image=tf.Summary.Image(
+        image=tf.compat.v1.Summary.Image(
             height=h, width=w * 3, colorspace=1,  # greyscale
             encoded_image_string=buf.getvalue()))
 
@@ -302,23 +302,23 @@ class EvalTracker(object):
 
     summaries = (
         list(self.images_xy) + list(self.images_xz) + list(self.images_yz) + [
-            tf.Summary.Value(tag='masked_voxel_fraction',
+            tf.compat.v1.Summary.Value(tag='masked_voxel_fraction',
                              simple_value=(self.masked_voxels /
                                            self.total_voxels)),
-            tf.Summary.Value(tag='eval/patch_loss',
+            tf.compat.v1.Summary.Value(tag='eval/patch_loss',
                              simple_value=self.loss / self.num_patches),
-            tf.Summary.Value(tag='eval/patches',
+            tf.compat.v1.Summary.Value(tag='eval/patches',
                              simple_value=self.num_patches),
-            tf.Summary.Value(tag='eval/accuracy',
+            tf.compat.v1.Summary.Value(tag='eval/accuracy',
                              simple_value=(self.tp + self.tn) / (
                                  self.tp + self.tn + self.fp + self.fn)),
-            tf.Summary.Value(tag='eval/precision',
+            tf.compat.v1.Summary.Value(tag='eval/precision',
                              simple_value=precision),
-            tf.Summary.Value(tag='eval/recall',
+            tf.compat.v1.Summary.Value(tag='eval/recall',
                              simple_value=recall),
-            tf.Summary.Value(tag='eval/specificity',
+            tf.compat.v1.Summary.Value(tag='eval/specificity',
                              simple_value=self.tn / max(self.tn + self.fp, 1)),
-            tf.Summary.Value(tag='eval/f1',
+            tf.compat.v1.Summary.Value(tag='eval/f1',
                              simple_value=(2.0 * precision * recall /
                                            (precision + recall)))
         ])
@@ -393,10 +393,10 @@ def _get_permutable_axes():
 
 # Parse serialized example from tfrecord file
 def parser_fn(serialized_example):
-  features = tf.parse_single_example(serialized_example, 
+  features = tf.io.parse_single_example(serialized=serialized_example, 
           features=dict(
-              center=tf.FixedLenFeature(shape=[1, 3], dtype=tf.int64), 
-              label_volume_name=tf.FixedLenFeature(shape=[1], dtype=tf.string)
+              center=tf.io.FixedLenFeature(shape=[1, 3], dtype=tf.int64), 
+              label_volume_name=tf.io.FixedLenFeature(shape=[1], dtype=tf.string)
               )
           )
   coord = features['center']
@@ -442,7 +442,7 @@ def define_data_input(model, queue_batch=None):
     d = tf.data.TFRecordDataset(FLAGS.train_coords, compression_type='GZIP')
     d = d.shard(hvd.size(), hvd.rank())
     d = d.map(parser_fn)
-    iterator = d.make_one_shot_iterator()
+    iterator = tf.compat.v1.data.make_one_shot_iterator(d)
     coord, volname = iterator.get_next()
   else:
     logging.warning("You need to install Horovod to use sharding. Turning sharding off..")
@@ -499,7 +499,7 @@ def define_data_input(model, queue_batch=None):
   # will be hidden behind a queue, so expensive/slow ops can take advantage
   # of multithreading.
   #MK TODO: check num_threads usage here
-  patches, labels, loss_weights = tf.train.shuffle_batch(
+  patches, labels, loss_weights = tf.compat.v1.train.shuffle_batch(
       [patch, labels, loss_weights], queue_batch,
       num_threads=max(1, FLAGS.batch_size // 2),
       capacity=32 * FLAGS.batch_size,
@@ -513,8 +513,8 @@ def prepare_ffn(model):
   """Creates the TF graph for an FFN."""
   shape = [FLAGS.batch_size] + list(model.pred_mask_size[::-1]) + [1]
 
-  model.labels = tf.placeholder(tf.float32, shape, name='labels')
-  model.loss_weights = tf.placeholder(tf.float32, shape, name='loss_weights')
+  model.labels = tf.compat.v1.placeholder(tf.float32, shape, name='labels')
+  model.loss_weights = tf.compat.v1.placeholder(tf.float32, shape, name='loss_weights')
   model.define_tf_graph()
 
 
@@ -710,21 +710,21 @@ def train_ffn(model_cls, **model_kwargs):
     eval_tracker = EvalTracker(eval_shape_zyx)
     load_data_ops = define_data_input(model, queue_batch=1)
     prepare_ffn(model)
-    merge_summaries_op = tf.summary.merge_all()
+    merge_summaries_op = tf.compat.v1.summary.merge_all()
 
     if hvd.rank() == 0:
       save_flags()
 
     summary_writer = None
-    saver = tf.train.Saver(keep_checkpoint_every_n_hours=0.25,max_to_keep=20)
-    scaffold = tf.train.Scaffold(saver=saver)
+    saver = tf.compat.v1.train.Saver(keep_checkpoint_every_n_hours=0.25,max_to_keep=20)
+    scaffold = tf.compat.v1.train.Scaffold(saver=saver)
     if horovodworks:
       hooks = [hvd.BroadcastGlobalVariablesHook(0),
-             tf.train.StopAtStepHook(last_step=FLAGS.max_steps),]
+             tf.estimator.StopAtStepHook(last_step=FLAGS.max_steps),]
     else:
-      hooks = [tf.train.StopAtStepHook(last_step=FLAGS.max_steps),]
+      hooks = [tf.estimator.StopAtStepHook(last_step=FLAGS.max_steps),]
 
-    config=tf.ConfigProto(log_device_placement=False,
+    config=tf.compat.v1.ConfigProto(log_device_placement=False,
                           allow_soft_placement=True,
                           intra_op_parallelism_threads = FLAGS.num_intra_threads,
                           inter_op_parallelism_threads = FLAGS.num_inter_threads)
@@ -734,7 +734,7 @@ def train_ffn(model_cls, **model_kwargs):
     # Horovod: save checkpoints only on worker 0 to prevent other workers from
     # corrupting them.
     checkpoint_dir = FLAGS.train_dir if hvd.rank() == 0 else None
-    with tf.train.MonitoredTrainingSession(
+    with tf.compat.v1.train.MonitoredTrainingSession(
         master=FLAGS.master,
         save_summaries_steps=None,
         save_checkpoint_secs=FLAGS.summary_rate_secs,
@@ -746,9 +746,9 @@ def train_ffn(model_cls, **model_kwargs):
       eval_tracker.sess = sess
       step = int(sess.run(model.global_step))
       if hvd.rank() == 0:
-        summary_writer = tf.summary.FileWriterCache.get(FLAGS.train_dir)
+        summary_writer = tf.compat.v1.summary.FileWriterCache.get(FLAGS.train_dir)
         summary_writer.add_session_log(
-            tf.summary.SessionLog(status=tf.summary.SessionLog.START), step)
+            tf.compat.v1.summary.SessionLog(status=tf.compat.v1.summary.SessionLog.START), step)
 
 
       fov_shifts = list(model.shifts)  # x, y, z
@@ -794,7 +794,7 @@ def train_ffn(model_cls, **model_kwargs):
         # Record summaries.
         if summ is not None and hvd.rank() == 0:
           logging.info('Saving summaries.')
-          summ = tf.Summary.FromString(summ)
+          summ = tf.compat.v1.Summary.FromString(summ)
 
           # Compute a loss over the whole training patch (i.e. more than a
           # single-step field of view of the network). This quantifies the

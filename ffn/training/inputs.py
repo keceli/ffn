@@ -49,7 +49,7 @@ def create_filename_queue(coordinates_file_pattern, shuffle=True):
       for i in range(num_shards)]
   else:
     coord_file_list = gfile.Glob(coordinates_file_pattern)
-  return tf.train.string_input_producer(coord_file_list, shuffle=shuffle)
+  return tf.compat.v1.train.string_input_producer(coord_file_list, shuffle=shuffle)
 
 
 def load_patch_coordinates_from_filename_queue(filename_queue):
@@ -61,12 +61,12 @@ def load_patch_coordinates_from_filename_queue(filename_queue):
   Returns:
     Tuple of coordinates (shape `[1, 3]`) and volume name (shape `[1]`) tensors.
   """
-  record_options = tf.python_io.TFRecordOptions(
-      tf.python_io.TFRecordCompressionType.GZIP)
-  keys, protos = tf.TFRecordReader(options=record_options).read(filename_queue)
-  examples = tf.parse_single_example(protos, features=dict(
-      center=tf.FixedLenFeature(shape=[1, 3], dtype=tf.int64),
-      label_volume_name=tf.FixedLenFeature(shape=[1], dtype=tf.string),
+  record_options = tf.io.TFRecordOptions(
+      tf.compat.v1.python_io.TFRecordCompressionType.GZIP)
+  keys, protos = tf.compat.v1.TFRecordReader(options=record_options).read(filename_queue)
+  examples = tf.io.parse_single_example(serialized=protos, features=dict(
+      center=tf.io.FixedLenFeature(shape=[1, 3], dtype=tf.int64),
+      label_volume_name=tf.io.FixedLenFeature(shape=[1], dtype=tf.string),
   ))
   coord = examples['center']
   volname = examples['label_volume_name']
@@ -90,7 +90,7 @@ def load_patch_coordinates(coordinates_file_pattern,
   Returns:
     Tuple of coordinates (shape `[1, 3]`) and volume name (shape `[1]`) tensors.
   """
-  with tf.name_scope(scope):
+  with tf.compat.v1.name_scope(scope):
     filename_queue = create_filename_queue(
         coordinates_file_pattern, shuffle=shuffle)
     return load_patch_coordinates_from_filename_queue(filename_queue)
@@ -158,13 +158,13 @@ def load_from_numpylike(coordinates, volume_names, shape, volume_map,
     data = np.expand_dims(data, 0)
     return data
 
-  with tf.name_scope(name, 'LoadFromNumpyLike',
+  with tf.compat.v1.name_scope(name, 'LoadFromNumpyLike',
                      [coordinates, volume_names]) as scope:
     # For historical reasons these have extra flat dims.
     coordinates = tf.squeeze(coordinates, axis=0)
     volume_names = tf.squeeze(volume_names, axis=0)
 
-    loaded = tf.py_func(
+    loaded = tf.compat.v1.py_func(
         _load_from_numpylike, [coordinates, volume_names], [dtype],
         name=scope)[0]
     loaded.set_shape([1] + list(shape[::-1]) + [num_channels])
@@ -198,7 +198,7 @@ def get_offset_scale(volname,
       scale = default_scale
     return np.float32(offset), np.float32(scale)
 
-  offset, scale = tf.py_func(
+  offset, scale = tf.compat.v1.py_func(
       _get_offset_scale, [volname], [tf.float32, tf.float32],
       stateful=False,
       name=name)
@@ -228,7 +228,7 @@ def offset_and_scale_patches(patches,
     patches cast to float32, less offset, divided by scale for given volname, or
     else defaults.
   """
-  with tf.name_scope(scope):
+  with tf.compat.v1.name_scope(scope):
     offset, scale = get_offset_scale(
         volname,
         offset_scale_map=offset_scale_map,
@@ -267,7 +267,7 @@ def redundant_lom(label, radius, scope='redundant_lom'):
   if label.shape_as_list()[4] != 1:
     raise ValueError('Input tensor must have single channel.')
 
-  with tf.name_scope(scope):
+  with tf.compat.v1.name_scope(scope):
 
     # Central crop to be compared to offset crops.
     core_start = [0] + list(radius) + [0]
@@ -355,8 +355,8 @@ def soften_labels(bool_labels, softness=0.05, scope='soften_labels'):
     Tensor with same shape as bool_labels with dtype `float32` and values 0.05
     for False and 0.95 for True.
   """
-  with tf.op_scope([bool_labels, softness], scope):
-    label_shape = tf.shape(bool_labels, name='label_shape')
-    return tf.where(bool_labels,
+  with tf.compat.v1.op_scope([bool_labels, softness], scope):
+    label_shape = tf.shape(input=bool_labels, name='label_shape')
+    return tf.compat.v1.where(bool_labels,
                     tf.fill(label_shape, 1.0 - softness, name='soft_true'),
                     tf.fill(label_shape, softness, name='soft_false'))

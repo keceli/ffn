@@ -884,9 +884,9 @@ class Runner(object):
     self.stop_executor()
 
     if session is None:
-      config = tf.ConfigProto()
-      tf.reset_default_graph()
-      session = tf.Session(config=config)
+      config = tf.compat.v1.ConfigProto()
+      tf.compat.v1.reset_default_graph()
+      session = tf.compat.v1.Session(config=config)
     self.session = session
     logging.info('Available TF devices: %r', self.session.list_devices())
 
@@ -907,7 +907,7 @@ class Runner(object):
         self.model, self.session, self.counters, batch_size)
     self.movement_policy_fn = movement.get_policy_fn(request, self.model)
 
-    self.saver = tf.train.Saver()
+    self.saver = tf.compat.v1.train.Saver()
     self._load_model_checkpoint(request.model_checkpoint_path)
 
     self.executor.start_server()

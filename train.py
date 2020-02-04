@@ -151,12 +151,12 @@ class EvalTracker(object):
   """Tracks eval results over multiple training steps."""
 
   def __init__(self, eval_shape):
-    self.eval_labels = tf.placeholder(
+    self.eval_labels = tf.compat.v1.placeholder(
         tf.float32, [1] + eval_shape + [1], name='eval_labels')
-    self.eval_preds = tf.placeholder(
+    self.eval_preds = tf.compat.v1.placeholder(
         tf.float32, [1] + eval_shape + [1], name='eval_preds')
     self.eval_loss = tf.reduce_mean(
-        tf.nn.sigmoid_cross_entropy_with_logits(
+        input_tensor=tf.nn.sigmoid_cross_entropy_with_logits(
             logits=self.eval_preds, labels=self.eval_labels))
     self.reset()
     self.eval_threshold = logit(0.9)
@@ -214,9 +214,9 @@ class EvalTracker(object):
     axis_names = 'zyx'
     axis_names = axis_names.replace(axis_names[slice_axis], '')
 
-    return tf.Summary.Value(
+    return tf.compat.v1.Summary.Value(
         tag='final_%s' % axis_names[::-1],
-        image=tf.Summary.Image(
+        image=tf.compat.v1.Summary.Image(
             height=h, width=w * 3, colorspace=1,  # greyscale
             encoded_image_string=buf.getvalue()))
 
@@ -264,23 +264,23 @@ class EvalTracker(object):
 
     summaries = (
         list(self.images_xy) + list(self.images_xz) + list(self.images_yz) + [
-            tf.Summary.Value(tag='masked_voxel_fraction',
+            tf.compat.v1.Summary.Value(tag='masked_voxel_fraction',
                              simple_value=(self.masked_voxels /
                                            self.total_voxels)),
-            tf.Summary.Value(tag='eval/patch_loss',
+            tf.compat.v1.Summary.Value(tag='eval/patch_loss',
                              simple_value=self.loss / self.num_patches),
-            tf.Summary.Value(tag='eval/patches',
+            tf.compat.v1.Summary.Value(tag='eval/patches',
                              simple_value=self.num_patches),
-            tf.Summary.Value(tag='eval/accuracy',
+            tf.compat.v1.Summary.Value(tag='eval/accuracy',
                              simple_value=(self.tp + self.tn) / (
                                  self.tp + self.tn + self.fp + self.fn)),
-            tf.Summary.Value(tag='eval/precision',
+            tf.compat.v1.Summary.Value(tag='eval/precision',
                              simple_value=precision),
-            tf.Summary.Value(tag='eval/recall',
+            tf.compat.v1.Summary.Value(tag='eval/recall',
                              simple_value=recall),
-            tf.Summary.Value(tag='eval/specificity',
+            tf.compat.v1.Summary.Value(tag='eval/specificity',
                              simple_value=self.tn / max(self.tn + self.fp, 1)),
-            tf.Summary.Value(tag='eval/f1',
+            tf.compat.v1.Summary.Value(tag='eval/f1',
                              simple_value=(2.0 * precision * recall /
                                            (precision + recall)))
         ])
@@ -430,7 +430,7 @@ def define_data_input(model, queue_batch=None):
   # Create a batch of examples. Note that any TF operation before this line
   # will be hidden behind a queue, so expensive/slow ops can take advantage
   # of multithreading.
-  patches, labels, loss_weights = tf.train.shuffle_batch(
+  patches, labels, loss_weights = tf.compat.v1.train.shuffle_batch(
       [patch, labels, loss_weights], queue_batch,
       num_threads=max(1, FLAGS.batch_size // 2),
       capacity=32 * FLAGS.batch_size,
@@ -444,8 +444,8 @@ def prepare_ffn(model):
   """Creates the TF graph for an FFN."""
   shape = [FLAGS.batch_size] + list(model.pred_mask_size[::-1]) + [1]
 
-  model.labels = tf.placeholder(tf.float32, shape, name='labels')
-  model.loss_weights = tf.placeholder(tf.float32, shape, name='loss_weights')
+  model.labels = tf.compat.v1.placeholder(tf.float32, shape, name='labels')
+  model.loss_weights = tf.compat.v1.placeholder(tf.float32, shape, name='loss_weights')
   model.define_tf_graph()
 
 
@@ -614,7 +614,7 @@ def save_flags():
 
 def train_ffn(model_cls, **model_kwargs):
   with tf.Graph().as_default():
-    with tf.device(tf.train.replica_device_setter(FLAGS.ps_tasks, merge_devices=True)):
+    with tf.device(tf.compat.v1.train.replica_device_setter(FLAGS.ps_tasks, merge_devices=True)):
       # The constructor might define TF ops/placeholders, so it is important
       # that the FFN is instantiated within the current context.
       model = model_cls(**model_kwargs)
@@ -623,20 +623,20 @@ def train_ffn(model_cls, **model_kwargs):
       eval_tracker = EvalTracker(eval_shape_zyx)
       load_data_ops = define_data_input(model, queue_batch=1)
       prepare_ffn(model)
-      merge_summaries_op = tf.summary.merge_all()
+      merge_summaries_op = tf.compat.v1.summary.merge_all()
 
       if FLAGS.task == 0:
         save_flags()
 
       summary_writer = None
-      saver = tf.train.Saver(keep_checkpoint_every_n_hours=0.25)
-      scaffold = tf.train.Scaffold(saver=saver)
-      with tf.train.MonitoredTrainingSession(
+      saver = tf.compat.v1.train.Saver(keep_checkpoint_every_n_hours=0.25)
+      scaffold = tf.compat.v1.train.Scaffold(saver=saver)
+      with tf.compat.v1.train.MonitoredTrainingSession(
           master=FLAGS.master,
           is_chief=(FLAGS.task == 0),
           save_summaries_steps=None,
           save_checkpoint_secs=300,
-          config=tf.ConfigProto(
+          config=tf.compat.v1.ConfigProto(
               log_device_placement=False, allow_soft_placement=True),
           checkpoint_dir=FLAGS.train_dir,
           scaffold=scaffold) as sess:
@@ -652,9 +652,9 @@ def train_ffn(model_cls, **model_kwargs):
             time.sleep(5.0)
             step = int(sess.run(model.global_step))
         else:
-          summary_writer = tf.summary.FileWriterCache.get(FLAGS.train_dir)
+          summary_writer = tf.compat.v1.summary.FileWriterCache.get(FLAGS.train_dir)
           summary_writer.add_session_log(
-              tf.summary.SessionLog(status=tf.summary.SessionLog.START), step)
+              tf.compat.v1.summary.SessionLog(status=tf.compat.v1.summary.SessionLog.START), step)
 
         fov_shifts = list(model.shifts)  # x, y, z
         if FLAGS.shuffle_moves:
@@ -698,7 +698,7 @@ def train_ffn(model_cls, **model_kwargs):
           # Record summaries.
           if summ is not None:
             logging.info('Saving summaries.')
-            summ = tf.Summary.FromString(summ)
+            summ = tf.compat.v1.Summary.FromString(summ)
 
             # Compute a loss over the whole training patch (i.e. more than a
             # single-step field of view of the network). This quantifies the
