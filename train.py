@@ -43,11 +43,14 @@ import six
 
 from scipy.special import expit
 from scipy.special import logit
-import tensorflow as tf
+
+#import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 
 from absl import app
 from absl import flags
-from tensorflow import gfile
+from tensorflow.compat.v1 import gfile
 
 from ffn.inference import movement
 from ffn.training import mask
@@ -143,6 +146,9 @@ flags.DEFINE_list('reflectable_axes', ['0', '1', '2'],
                   'List of integers equal to a subset of [0, 1, 2] specifying '
                   'which of the [z, y, x] axes, respectively, may be reflected '
                   'in order to augment the training data.')
+
+flags.DEFINE_integer('num_intra_threads', 28, 'Number of threads for intra-op parallelism.')
+flags.DEFINE_integer('num_inter_threads', 2, 'Number of threads for inter-op parallelism.')
 
 FLAGS = flags.FLAGS
 
@@ -637,7 +643,9 @@ def train_ffn(model_cls, **model_kwargs):
           save_summaries_steps=None,
           save_checkpoint_secs=300,
           config=tf.ConfigProto(
-              log_device_placement=False, allow_soft_placement=True),
+              log_device_placement=False, allow_soft_placement=True,
+              intra_op_parallelism_threads = FLAGS.num_intra_threads,
+              inter_op_parallelism_threads = FLAGS.num_inter_threads),
           checkpoint_dir=FLAGS.train_dir,
           scaffold=scaffold) as sess:
 
@@ -652,6 +660,7 @@ def train_ffn(model_cls, **model_kwargs):
             time.sleep(5.0)
             step = int(sess.run(model.global_step))
         else:
+          #summary_writer = tf.summary.FileWriterCache.get('./summary')
           summary_writer = tf.summary.FileWriterCache.get(FLAGS.train_dir)
           summary_writer.add_session_log(
               tf.summary.SessionLog(status=tf.summary.SessionLog.START), step)
@@ -673,7 +682,9 @@ def train_ffn(model_cls, **model_kwargs):
         while not sess.should_stop() and step < FLAGS.max_steps:
           # Run summaries periodically.
           t_curr = time.time()
-          if t_curr - t_last > FLAGS.summary_rate_secs and FLAGS.task == 0:
+          #if t_curr - t_last > FLAGS.summary_rate_secs and FLAGS.task == 0:
+          if step % 100 == 0 and step > 0:
+            logging.info('Setting summ_op.')
             summ_op = merge_summaries_op
             t_last = t_curr
           else:
@@ -688,14 +699,17 @@ def train_ffn(model_cls, **model_kwargs):
                   model.labels: labels,
                   model.input_patches: patches,
                   model.input_seed: seed,
+                  model.learning_rate: FLAGS.learning_rate,
               })
+
+          print('here %s' % step)
 
           # Save prediction results in the original seed array so that
           # they can be used in subsequent steps.
           mask.update_at(seed, (0, 0, 0), updated_seed)
 
           # Record summaries.
-          if summ is not None:
+          if summ is not None: # and step % 50 == 0 and step > 0:
             logging.info('Saving summaries.')
             summ = tf.Summary.FromString(summ)
 

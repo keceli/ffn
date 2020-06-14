@@ -18,7 +18,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow as tf
+#import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 
 from .. import model
 
@@ -47,6 +49,24 @@ def _predict_object_mask(net, depth=9):
 
   return logits
 
+def _predict_object_mask_tf2(net, depth=9):
+  """Computes single-object mask prediction."""
+  conv = tf.layers.conv3d
+  net = conv(net, name='conv0_a', filters=32, kernel_size=(3, 3, 3), padding='SAME')
+  net = conv(net, name='conv0_b', activation=None, filters=32, kernel_size=(3, 3, 3), padding='SAME')
+
+  for i in range(1, depth):
+    with tf.name_scope('residual%d' % i):
+      in_net = net
+      net = tf.nn.relu(net)
+      net = conv(net, name='conv%d_a' % i, filters=32,kernel_size=(3, 3, 3), padding='SAME')
+      net = conv(net, name='conv%d_b' % i, activation=None, filters=32, kernel_size=(3, 3, 3), padding='SAME')
+      net += in_net
+
+  net = tf.nn.relu(net)
+  logits = conv(net, 1, (1, 1, 1), activation=None, name='conv_lom')
+
+  return logits
 
 class ConvStack3DFFNModel(model.FFNModel):
   dim = 3
@@ -67,7 +87,7 @@ class ConvStack3DFFNModel(model.FFNModel):
     net = tf.concat([self.input_patches, self.input_seed], 4)
 
     with tf.variable_scope('seed_update', reuse=False):
-      logit_update = _predict_object_mask(net, self.depth)
+      logit_update = _predict_object_mask_tf2(net, self.depth)
 
     logit_seed = self.update_seed(self.input_seed, logit_update)
 

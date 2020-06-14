@@ -20,9 +20,11 @@ from __future__ import print_function
 
 import re
 import numpy as np
-import tensorflow as tf
+#import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 
-from tensorflow import gfile
+from tensorflow.compat.v1 import gfile
 from ..utils import bounding_box
 
 
@@ -152,7 +154,7 @@ def load_from_numpylike(coordinates, volume_names, shape, volume_map,
     if data.ndim == 4:
       data = np.rollaxis(data, 0, start=4)
     else:
-      data = np.expand_dims(data, 4)
+      data = np.expand_dims(data, 3)
 
     # Add flat batch dim and return.
     data = np.expand_dims(data, 0)

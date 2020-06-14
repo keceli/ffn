@@ -20,7 +20,11 @@ from __future__ import print_function
 
 import logging
 import sys
-import tensorflow as tf
+
+#import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
+
 try:
   import horovod.tensorflow as hvd
 except:
