@@ -29,7 +29,7 @@ from io import BytesIO
 from functools import partial
 import itertools
 import json
-from tensorflow import logging
+from tensorflow.compat.v1 import logging
 #import logging
 import os
 import sys
@@ -54,6 +54,7 @@ import six
 from scipy.special import expit
 from scipy.special import logit
 import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 
 from absl import app
 from absl import flags
@@ -389,9 +390,9 @@ def _get_permutable_axes():
 
 # Parse serialized example from tfrecord file
 def parser_fn(serialized_example):
-  features = tf.parse_single_example(serialized_example, 
+  features = tf.parse_single_example(serialized_example,
           features=dict(
-              center=tf.FixedLenFeature(shape=[1, 3], dtype=tf.int64), 
+              center=tf.FixedLenFeature(shape=[1, 3], dtype=tf.int64),
               label_volume_name=tf.FixedLenFeature(shape=[1], dtype=tf.string)
               )
           )
@@ -662,7 +663,7 @@ def get_batch(load_example, eval_tracker, model, batch_size, get_offsets):
       seeds[i][:] = batched_seeds[i, ...]
 
 def get_learning_rate(step,batch_size=1):
-    """Wushi: Generates learning rate for current step according to learning 
+    """Wushi: Generates learning rate for current step according to learning
        rate rule.
     """
     target_lr = FLAGS.learning_rate
