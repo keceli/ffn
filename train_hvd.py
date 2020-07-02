@@ -53,11 +53,11 @@ import six
 
 from scipy.special import expit
 from scipy.special import logit
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from absl import app
 from absl import flags
-from tensorflow import gfile
+from tensorflow.compat.v1 import gfile
 
 from ffn.inference import movement
 from ffn.training import mask
